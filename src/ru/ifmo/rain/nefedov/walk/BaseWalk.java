@@ -31,6 +31,11 @@ public abstract class BaseWalk {
         String inputFilePathStr = args[0];
         String outputFilePathStr = args[1];
 
+        if (inputFilePathStr == null || outputFilePathStr == null) {
+            System.err.println(format(ERROR_WITH, "nullable initial arguments", ""));
+            return;
+        }
+
         Path inputFilePath;
         Path outputFilePath;
 
@@ -39,13 +44,19 @@ public abstract class BaseWalk {
             outputFilePath = Path.of(outputFilePathStr);
 
             if (!Files.exists(outputFilePath)) {
-                Files.createDirectories(outputFilePath.getParent());
+                try {
+                    Path dir = outputFilePath.getParent();
+                    if (dir == null) {
+                        throw new IOException("can not get parent directory of " + outputFilePathStr + " [aka file]");
+                    }
+                    Files.createDirectories(dir);
+                } catch (IOException | SecurityException e) {
+                    System.err.println(format(ERROR_WITH, "creating of output file's directory", e.getMessage()));
+                    return;
+                }
             }
         } catch (IllegalArgumentException | FileSystemNotFoundException | SecurityException e) {
             System.err.println(format(ERROR_WITH, "parsing initial paths", e.getMessage()));
-            return;
-        } catch (IOException e) {
-            System.err.println(format(ERROR_WITH, "creating of output file's directory", e.getMessage()));
             return;
         }
 
